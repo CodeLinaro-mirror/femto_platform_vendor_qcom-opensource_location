@@ -161,6 +161,13 @@ static void parseLocation(const ::Location &halLocation, Location& location) {
     location.verticalAccuracy = halLocation.verticalAccuracy;
     location.speedAccuracy = halLocation.speedAccuracy;
     location.bearingAccuracy = halLocation.bearingAccuracy;
+#ifndef FEATURE_EXTERNAL_AP
+    location.elapsedRealTimeNs = halLocation.elapsedRealTime;
+    location.elapsedRealTimeUncNs = halLocation.elapsedRealTimeUnc;
+#else
+    location.elapsedRealTimeNs = 0;
+    location.elapsedRealTimeUncNs = 0;
+#endif
 
     if (0 != halLocation.timestamp) {
         flags |= LOCATION_HAS_TIMESTAMP_BIT;
@@ -189,6 +196,12 @@ static void parseLocation(const ::Location &halLocation, Location& location) {
     if (::LOCATION_HAS_BEARING_ACCURACY_BIT & halLocation.flags) {
         flags |= LOCATION_HAS_BEARING_ACCURACY_BIT;
     }
+#ifndef FEATURE_EXTERNAL_AP
+    if (::LOCATION_HAS_ELAPSED_REAL_TIME_BIT & halLocation.flags) {
+        flags |= LOCATION_HAS_ELAPSED_REAL_TIME_BIT;
+        flags |= LOCATION_HAS_ELAPSED_REAL_TIME_UNC_BIT;
+    }
+#endif
     location.flags = (LocationFlagsMask)flags;
 
     flags = 0;
@@ -2197,6 +2210,8 @@ void IpcListener::onReceive(const char* data, uint32_t length,
                     gnssLocation.speedAccuracy      = location.speedAccuracy;
                     gnssLocation.bearingAccuracy    = location.bearingAccuracy;
                     gnssLocation.techMask           = location.techMask;
+                    gnssLocation.elapsedRealTimeNs  = location.elapsedRealTimeNs;
+                    gnssLocation.elapsedRealTimeUncNs = location.elapsedRealTimeUncNs;
 
                     mApiImpl.mLogger.log(gnssLocation);
                 }
