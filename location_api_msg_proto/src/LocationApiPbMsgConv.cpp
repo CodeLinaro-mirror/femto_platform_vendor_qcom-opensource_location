@@ -1449,6 +1449,15 @@ uint32_t LocationApiPbMsgConv::getPBMaskForGnssMeasurementsDataFlagsMask(
     if (gnssMeasDataFlagsMask & GNSS_MEASUREMENTS_DATA_BASEBAND_CARRIER_TO_NOISE_BIT) {
         pbGnssMeasDataFlagsMask |= PB_GNSS_MEASUREMENTS_DATA_BASEBAND_CARRIER_TO_NOISE_BIT;
     }
+    if (gnssMeasDataFlagsMask & GNSS_MEASUREMENTS_DATA_FULL_ISB_BIT) {
+        pbGnssMeasDataFlagsMask |= PB_GNSS_MEASUREMENTS_DATA_FULL_ISB_BIT;
+    }
+    if (gnssMeasDataFlagsMask & GNSS_MEASUREMENTS_DATA_FULL_ISB_UNCERTAINTY_BIT) {
+        pbGnssMeasDataFlagsMask |= PB_GNSS_MEASUREMENTS_DATA_FULL_ISB_UNCERTAINTY_BIT;
+    }
+    if (gnssMeasDataFlagsMask & GNSS_MEASUREMENTS_DATA_GNSS_SIGNAL_TYPE_BIT) {
+        pbGnssMeasDataFlagsMask |= PB_GNSS_MEASUREMENTS_DATA_GNSS_SIGNAL_TYPE_BIT;
+    }
     LocApiPb_LOGv("LocApiPB: gnssMeasDataFlagsMask:%x, pbGnssMeasDataFlagsMask:%x",
             gnssMeasDataFlagsMask, pbGnssMeasDataFlagsMask);
     return pbGnssMeasDataFlagsMask;
@@ -2410,6 +2419,16 @@ uint32_t LocationApiPbMsgConv::getGnssMeasurementsDataFlagsMaskFromPB(
     if (pbGnssMeasDataFlgMask & PB_GNSS_MEASUREMENTS_DATA_BASEBAND_CARRIER_TO_NOISE_BIT) {
         gnssMeasDataFlgMask |= GNSS_MEASUREMENTS_DATA_BASEBAND_CARRIER_TO_NOISE_BIT;
     }
+    if (pbGnssMeasDataFlgMask & PB_GNSS_MEASUREMENTS_DATA_FULL_ISB_BIT) {
+        gnssMeasDataFlgMask |= GNSS_MEASUREMENTS_DATA_FULL_ISB_BIT;
+    }
+    if (pbGnssMeasDataFlgMask & PB_GNSS_MEASUREMENTS_DATA_FULL_ISB_UNCERTAINTY_BIT) {
+        gnssMeasDataFlgMask |= GNSS_MEASUREMENTS_DATA_FULL_ISB_UNCERTAINTY_BIT;
+    }
+    if (pbGnssMeasDataFlgMask & PB_GNSS_MEASUREMENTS_DATA_GNSS_SIGNAL_TYPE_BIT) {
+        gnssMeasDataFlgMask |= GNSS_MEASUREMENTS_DATA_GNSS_SIGNAL_TYPE_BIT;
+    }
+
     LocApiPb_LOGv("LocApiPB: pbGnssMeasDataFlgMask:%x, gnssMeasDataFlgMask:%x",
             pbGnssMeasDataFlgMask, gnssMeasDataFlgMask);
     return gnssMeasDataFlgMask;
@@ -3963,6 +3982,23 @@ int LocationApiPbMsgConv::convertGnssMeasDataToPB(const GnssMeasurementsData &gn
     // double basebandCarrierToNoiseDbHz = 21;
     pbGnssMeasData->set_basebandcarriertonoisedbhz(gnssMeasData.basebandCarrierToNoiseDbHz);
 
+    // uint32 gnssSignalType = 22;
+    if (gnssMeasData.flags & GNSS_MEASUREMENTS_DATA_GNSS_SIGNAL_TYPE_BIT ) {
+        pbGnssMeasData->set_gnsssignaltype(
+            getPBMaskForGnssSignalTypeMask(gnssMeasData.gnssSignalType));
+    }
+
+    // double fullInterSignalBiasNs = 23;
+    if (gnssMeasData.flags & GNSS_MEASUREMENTS_DATA_FULL_ISB_BIT) {
+        pbGnssMeasData->set_fullintersignalbiasns(gnssMeasData.fullInterSignalBiasNs);
+    }
+
+    // double fullInterSignalBiasUncertaintyNs = 24;
+    if (gnssMeasData.flags & GNSS_MEASUREMENTS_DATA_FULL_ISB_UNCERTAINTY_BIT) {
+        pbGnssMeasData->set_fullintersignalbiasuncertaintyns(
+            gnssMeasData.fullInterSignalBiasUncertaintyNs);
+    }
+
     LOC_LOGd("LocApiPB: gnssMeasData - GnssMeasDataFlags:%x, Svid:%d, SvType:%d, StateMsk:%x, "\
             "RcvSvTime:%"  PRIu64", RcvSvTimeUnc:%" PRIu64", CNoDb:%lf", gnssMeasData.flags,
             gnssMeasData.svId, gnssMeasData.svType, gnssMeasData.stateMask,
@@ -5188,6 +5224,16 @@ int LocationApiPbMsgConv::pbConvertToGnssMeasurementsData(
 
     // double basebandCarrierToNoiseDbHz = 21;
     gnssMeasData.basebandCarrierToNoiseDbHz = pbGnssMeasData.basebandcarriertonoisedbhz();
+
+    // uint32 gnssSignalType = 22; - bitwise OR of  PBGnssSignalTypeMask
+    gnssMeasData.gnssSignalType =  getGnssSignalTypeMaskFromPB(pbGnssMeasData.gnsssignaltype());
+
+    // double fullInterSignalBiasNs = 23;
+    gnssMeasData.fullInterSignalBiasNs = pbGnssMeasData.fullintersignalbiasns();
+
+    // double fullInterSignalBiasUncertaintyNs = 24;
+    gnssMeasData.fullInterSignalBiasUncertaintyNs =
+            pbGnssMeasData.fullintersignalbiasuncertaintyns();
 
     LOC_LOGd("LocApiPB: pbGnssMeasData - GnssMeasDataFlags:%x, Svid:%d, SvType:%d, StateMsk:%x, "\
             "RcvSvTime:%"  PRIu64", RcvSvTimeUnc:%" PRIu64", CNoDb:%lf", gnssMeasData.flags,
