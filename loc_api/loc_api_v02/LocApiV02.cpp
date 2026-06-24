@@ -6426,8 +6426,21 @@ bool LocApiV02 :: convertGnssMeasurements (
     uint32_t count;
 
     LOC_LOGv("entering index=%d", index);
-
-    const qmiLocSVMeasurementStructT_v02 &gnss_measurement_info =
+    if (isExt) {
+        if (index >= (int)gnss_measurement_report_ptr.extSvMeasurement_len) {
+            LOC_LOGe("index %d out of bounds for extSvMeasurement_len %d",
+                     index, gnss_measurement_report_ptr.extSvMeasurement_len);
+            return false;
+        }
+    } else {
+        if (index >= (int)gnss_measurement_report_ptr.svMeasurement_len) {
+            LOC_LOGe("index %d out of bounds for svMeasurement_len %d",
+                     index, gnss_measurement_report_ptr.svMeasurement_len);
+            return false;
+        }
+    }
+    const qmiLocSVMeasurementStructT_v02 &gnss_measurement_info = isExt ?
+            gnss_measurement_report_ptr.extSvMeasurement[index] :
             gnss_measurement_report_ptr.svMeasurement[index];
     count = mGnssMeasurements->gnssMeasNotification.count;
 
@@ -6517,19 +6530,27 @@ bool LocApiV02 :: convertGnssMeasurements (
                 dgnss_sv_meas_ptr->prrCorrMetersPerSec;
     }
 
-    uint32_t svMeasurement_len = gnss_measurement_report_ptr.svMeasurement_len;
-    uint32_t svCarrierPhase_len = gnss_measurement_report_ptr.svCarrierPhaseUncertainty_len;
-    bool validCarrierPhaseUnc = false;
-    if ((1 == gnss_measurement_report_ptr.svCarrierPhaseUncertainty_valid) &&
-        (svMeasurement_len == svCarrierPhase_len)) {
-        validCarrierPhaseUnc = true;
+    if (!isExt) {
+        uint32_t svMeas_len = gnss_measurement_report_ptr.svMeasurement_len;
+        uint32_t svCarPhUnc_len = gnss_measurement_report_ptr.svCarrierPhaseUncertainty_len;
+        if ((1 == gnss_measurement_report_ptr.svCarrierPhaseUncertainty_valid) &&
+            (svMeas_len == svCarPhUnc_len) &&
+            ((uint32_t)index < svCarPhUnc_len)) {
+            svMeas.carrierPhaseUncValid = 1;
+            svMeas.carrierPhaseUnc =
+                    gnss_measurement_report_ptr.svCarrierPhaseUncertainty[index];
+        }
+    } else {
+        uint32_t extSvMeas_len = gnss_measurement_report_ptr.extSvMeasurement_len;
+        uint32_t extSvCarPhUnc_len = gnss_measurement_report_ptr.extSvCarrierPhaseUncertainty_len;
+        if ((1 == gnss_measurement_report_ptr.extSvCarrierPhaseUncertainty_valid) &&
+            (extSvMeas_len == extSvCarPhUnc_len) &&
+            ((uint32_t)index < extSvCarPhUnc_len)) {
+            svMeas.carrierPhaseUncValid = 1;
+            svMeas.carrierPhaseUnc =
+                    gnss_measurement_report_ptr.extSvCarrierPhaseUncertainty[index];
+        }
     }
-    if (validCarrierPhaseUnc) {
-        svMeas.carrierPhaseUncValid = 1;
-        svMeas.carrierPhaseUnc =
-            gnss_measurement_report_ptr.svCarrierPhaseUncertainty[index];
-    }
-
     // size
     measurementData.size = sizeof(GnssMeasurementsData);
 
@@ -6744,19 +6765,25 @@ bool LocApiV02 :: convertGnssMeasurements (
     } else {
         measurementData.adrMeters = 0.0;
     }
-
-    // accumulatedDeltaRangeUncertaintyM
-    if (gnss_measurement_report_ptr.svCarrierPhaseUncertainty_valid) {
-        measurementData.adrUncertaintyMeters =
-            (SPEED_OF_LIGHT / measurementData.carrierFrequencyHz) *
-            gnss_measurement_report_ptr.svCarrierPhaseUncertainty[index];
-        LOC_LOGv("carrierPhaseUnc = %.6f adrMetersUnc = %.6f",
-                 gnss_measurement_report_ptr.svCarrierPhaseUncertainty[index],
-                 measurementData.adrUncertaintyMeters);
+    if (!isExt) {
+        if (gnss_measurement_report_ptr.svCarrierPhaseUncertainty_valid) {
+            measurementData.adrUncertaintyMeters =
+                (SPEED_OF_LIGHT / measurementData.carrierFrequencyHz) *
+                gnss_measurement_report_ptr.svCarrierPhaseUncertainty[index];
+            measurementData.flags |= GNSS_MEASUREMENTS_DATA_ADR_UNCERTAINTY_BIT;
+        } else {
+            measurementData.adrUncertaintyMeters = 0.0;
+        }
     } else {
-        measurementData.adrUncertaintyMeters = 0.0;
+        if (gnss_measurement_report_ptr.extSvCarrierPhaseUncertainty_valid) {
+            measurementData.adrUncertaintyMeters =
+                (SPEED_OF_LIGHT / measurementData.carrierFrequencyHz) *
+                gnss_measurement_report_ptr.extSvCarrierPhaseUncertainty[index];
+            measurementData.flags |= GNSS_MEASUREMENTS_DATA_ADR_UNCERTAINTY_BIT;
+        } else {
+            measurementData.adrUncertaintyMeters = 0.0;
+        }
     }
-
     measurementData.flags |= GNSS_MEASUREMENTS_DATA_ADR_STATE_BIT;
     if ((gnss_measurement_info.validMask & QMI_LOC_SV_CARRIER_PHASE_VALID_V02) &&
         (gnss_measurement_info.carrierPhase != 0.0)) {
