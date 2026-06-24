@@ -113,6 +113,15 @@ static const locClientEventIndTableStructT locClientEventIndTable[]= {
     sizeof(qmiLocEventPositionReportIndMsgT_v02),
     QMI_LOC_EVENT_MASK_POSITION_REPORT_V02 },
 
+    //GNSS Measurement Indication
+   { QMI_LOC_EVENT_GNSS_MEASUREMENT_REPORT_IND_V02,
+     sizeof(qmiLocEventGnssSvMeasInfoIndMsgT_v02),
+     QMI_LOC_EVENT_MASK_GNSS_MEASUREMENT_REPORT_V02 },
+
+  // Engine Debug Data ind
+  { QMI_LOC_ENGINE_DEBUG_DATA_IND_V02,
+    sizeof(qmiLocEngineDebugDataIndMsgT_v02)},
+
   // satellite report ind
   { QMI_LOC_EVENT_GNSS_SV_INFO_IND_V02,
     sizeof(qmiLocEventGnssSvInfoIndMsgT_v02),
@@ -234,11 +243,6 @@ static const locClientEventIndTableStructT locClientEventIndTable[]= {
     QMI_LOC_EVENT_MASK_GEOFENCE_PROXIMITY_NOTIFICATION_V02},
 
     //GNSS Measurement Indication
-   { QMI_LOC_EVENT_GNSS_MEASUREMENT_REPORT_IND_V02,
-     sizeof(qmiLocEventGnssSvMeasInfoIndMsgT_v02),
-     QMI_LOC_EVENT_MASK_GNSS_MEASUREMENT_REPORT_V02 },
-
-    //GNSS Measurement Indication
    { QMI_LOC_EVENT_SV_POLYNOMIAL_REPORT_IND_V02,
     sizeof(qmiLocEventGnssSvPolyIndMsgT_v02),
     QMI_LOC_EVENT_MASK_GNSS_SV_POLYNOMIAL_REPORT_V02 },
@@ -355,9 +359,6 @@ static const locClientEventIndTableStructT locClientEventIndTable[]= {
   { QMI_LOC_GNSS_BANDS_SUPPORTED_IND_V02,
     sizeof(qmiLocGnssBandsSupportedIndMsgT_v02)},
 
-  // Engine Debug Data ind
-  { QMI_LOC_ENGINE_DEBUG_DATA_IND_V02,
-    sizeof(qmiLocEngineDebugDataIndMsgT_v02)},
 };
 
 /* table to relate the respInd Id with its size */
